@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import { categories } from "@/lib/songs";
 const schema = new mongoose.Schema(
   {
+    deletedAt: {type:Date,default:null},
     title: { type: String, required: true, maxlength: 120 },
     category: { type: String, enum: categories, required: true },
     type: { type: String, enum: ["কীর্তন", "গান"], required: true },

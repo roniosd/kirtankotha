@@ -88,7 +88,7 @@ Published preview-তে ছয়টি public-domain নমুনা excerpt ও 
 
 ## যাচাই ও সীমা
 
-Production build এবং Bengali search/filter/context-link tests চালানো হয়েছে। Browser-এ mobile-width list, category selection, আলাদা reading page, previous/next, font settings ও demo favorites পরীক্ষা করা হয়েছে। আসল MongoDB credentials দেওয়া হয়নি; live registration, submission ও account favorites deployment-এর পর নিজের database দিয়ে পরীক্ষা করুন। Public launch-এর আগে hosting-এ authentication/submission rate limits দিন। Email verification, password reset বা admin panel যোগ করা হয়নি।
+Production build এবং Bengali search/filter/context-link tests চালানো হয়েছে। Browser-এ mobile-width list, category selection, আলাদা reading page, previous/next, font settings ও demo favorites পরীক্ষা করা হয়েছে। আসল MongoDB credentials দেওয়া হয়নি; live registration, submission ও account favorites deployment-এর পর নিজের database দিয়ে পরীক্ষা করুন। Public launch-এর আগে hosting-এ authentication/submission rate limits দিন। Email verification ও password reset এই সংস্করণে নেই।
 
 ## গান লেখার সহজ এডিটর
 
@@ -97,3 +97,44 @@ Production build এবং Bengali search/filter/context-link tests চালা
 Formatted document `lyricsContent`-এ এবং search-এর plain text `lyrics`-এ থাকে। `lib/richLyrics.js` অনুমোদিত node/mark যাচাই করে; `components/songs/LyricsContent.jsx` raw HTML ছাড়া ফরম্যাট দেখায়। আগের plain-text গানের কোনো migration দরকার নেই।
 
 পুরোনো কপি আপডেটে `npm ci` চালান এবং `LyricsEditor.jsx`, `UploadDialog.jsx`, `LyricsContent.jsx`, `SongReader.jsx`, `lib/richLyrics.js`, `models/Song.js`, দুইটি songs API route ও package files আপডেট করে server restart করুন। Production-এ নতুন build/deploy লাগবে।
+
+## নিজের গান ও অ্যাডমিন পরিচালনা
+
+- সাধারণ ব্যবহারকারী নিজের গান সম্পাদনা/মুছতে পারেন। তালিকা ও single-song page-এ একই বাটন আছে। নিচের “আমার গান” মেনুতে নিজের গানগুলো দেখা যায়।
+- অ্যাডমিন সব গান পরিচালনা এবং অ্যাকাউন্ট → “সব ব্যবহারকারী পরিচালনা” থেকে user search/delete করতে পারেন। নিজের অ্যাডমিন account মুছতে পারবেন না।
+- Song/User delete হলো soft delete (`deletedAt`)। সরানো গান public API থেকে আর আসে না। বন্ধ user-এর session পরবর্তী API request-এ বাতিল হয় এবং login আর কাজ করে না। তাঁর প্রকাশিত গান থাকে; admin সেগুলো আলাদাভাবে পরিচালনা করতে পারেন। Restore করতে database owner সংশ্লিষ্ট document-এর `deletedAt` null করতে পারেন; restore UI এই সংস্করণে নেই।
+- Production-এ demo গান দেখানো হয় না। আগে শুধু `lib/songs.js`-এ রাখা নমুনা গান থাকলে সেগুলো database song হিসেবে গণ্য হবে না; নিজের আসল গান add form দিয়ে যোগ করুন।
+
+### ডাটাবেসে role দিয়ে অ্যাডমিন নির্ধারণ
+
+সব নতুন account-এর `role` হলো `user`। প্রথম ব্যবহারকারীও স্বয়ংক্রিয়ভাবে admin হয় না। কোনো নির্দিষ্ট ইমেইলের বিশেষ অধিকার নেই।
+
+MongoDB Compass-এ নিজের `users` document খুলে এই field যোগ/বদলান:
+
+```json
+{ "role": "admin" }
+```
+
+সাধারণ ব্যবহারকারীর জন্য `"role": "user"` রাখুন। পুরোনো document-এ role না থাকলেও সেটি সাধারণ user হিসেবে ধরা হয়। Role পরিবর্তনের পর পেজ refresh করুন; প্রতিটি server request বর্তমান database role পড়ে। Admin-এর গান edit/delete ও ব্যবহারকারী পরিচালনার বিদ্যমান UI এই role অনুযায়ী কাজ করে।
+
+Role বদলানোর কোনো UI বা public API নেই। Signup request-এ role পাঠালেও server শুধু `user` account তৈরি করে। শুধু `role: "admin"` থাকলে সব গান ও ব্যবহারকারী পরিচালনার অধিকার পাওয়া যায়। অন্যরা নিজের গানই edit/delete করতে পারেন। নিজের account delete করার সুরক্ষা আগের মতো আছে।
+
+## পুরো সাইটে Dark mode
+
+Header-এর দিন/রাত button বা reader-এর রাতের আলো—দুটিই একই global theme বদলায়। Home, search, filters, account/upload dialogs, editor, user management এবং reading page-এ dark variants আছে। `next-themes` পছন্দ মনে রাখে। `globals.css`-এ Tailwind import এবং class-based `@custom-variant dark` configuration ছাড়া custom CSS rules নেই।
+
+## Google Lens
+
+Add/edit editor-এর ওপরে Google Lens খুলুন বাটন আছে। নতুন ট্যাবে ছবি স্ক্যান করে লেখা কপি করুন; ফিরে editor-এ পেস্ট করুন। এই সাইটে কোনো OCR engine বা image upload নেই। Google Lens-এর কাজ Google-এর সাইট/অ্যাপে হয়।
+
+## Developer credit
+
+Footer-এ আপনার অনুমোদিত credit: “Developed by Roni dev · Softbin”। পরিবর্তন করতে `components/layout/AppFooter.jsx` edit করুন।
+
+## এই সংস্করণ আপডেট করুন
+
+পুরো source backup রেখে নতুন archive merge করুন। `app/api/`, `lib/auth.js`, `lib/permissions.js`, `lib/songSchema.js`, `models/`, `components/`, `hooks/`, `scripts/`, `app/layout.jsx`, `app/globals.css`, package files প্রয়োজন। নিজের `.env.local` রাখুন। `npm ci` চালিয়ে server restart ও Production redeploy করুন। শুধু UI ফাইল copy করলে server permission বা editor updates কাজ করবে না।
+
+Preview-তে নমুনা গান, Google Lens link ও theme দেখা যায়; অ্যাকাউন্ট/role বাছাই বা অ্যাডমিন login simulation নেই। বাস্তব login ও role-based কাজ করতে MongoDB-সহ project চালান। Live database পরীক্ষা deployment-এর পরে করুন।
+
+যাচাই: role-based permission, signup role injection, ownership ও input/filter আচরণের ১৪টি test চালানো হয়েছে। Live MongoDB credentials ছাড়া বাস্তব CRUD পরীক্ষা করা হয়নি।

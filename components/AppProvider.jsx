@@ -10,8 +10,15 @@ import {
 import { demoSongs } from "@/lib/songs";
 import AccountDialog from "@/components/forms/AccountDialog";
 import UploadDialog from "@/components/forms/UploadDialog";
+import { canManageSong } from "@/lib/permissions";
+import DeleteSongDialog from "@/components/songs/DeleteSongDialog";
+import ManageUsersDialog from "@/components/forms/ManageUsersDialog";
 import { X } from "lucide-react";
 export const isDemo = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+const initialDemoSongs = demoSongs.map((song, index) => ({
+  ...song,
+  userId: index % 2 === 0 ? "demo-user" : "demo-other",
+}));
 const Context = createContext(null);
 export const useApp = () => useContext(Context);
 const readLocal = (key, fallback) => {
@@ -22,7 +29,7 @@ const readLocal = (key, fallback) => {
   }
 };
 export default function AppProvider({ children }) {
-  const [songs, setSongs] = useState(isDemo ? demoSongs : []),
+  const [songs, setSongs] = useState(isDemo ? initialDemoSongs : []),
     [loading, setLoading] = useState(!isDemo),
     [loadError, setLoadError] = useState(""),
     [user, setUser] = useState(null),
@@ -32,6 +39,9 @@ export default function AppProvider({ children }) {
     [favoriteBusy, setFavoriteBusy] = useState(false),
     [favoritesError, setFavoritesError] = useState(""),
     [favoritesRetry, setFavoritesRetry] = useState(0),
+    [editSong, setEditSong] = useState(null),
+    [selectedSong, setSelectedSong] = useState(null),
+    [demoReady, setDemoReady] = useState(false),
     [modal, setModal] = useState(null),
     [notice, setNotice] = useState("");
   const pending = useRef(false),
@@ -54,6 +64,17 @@ export default function AppProvider({ children }) {
   }, []);
   useEffect(() => {
     if (isDemo) {
+      const savedSongs = readLocal("kirtan-demo-songs-v2", null);
+      if (Array.isArray(savedSongs))
+        setSongs(
+          savedSongs.filter(
+            (song) =>
+              typeof song._id === "string" &&
+              typeof song.title === "string" &&
+              typeof song.lyrics === "string",
+          ),
+        );
+      setDemoReady(true);
       const saved = readLocal("kirtan-demo-favorites", []);
       setFavorites(
         Array.isArray(saved) ? saved.filter((x) => typeof x === "string") : [],
@@ -154,6 +175,11 @@ export default function AppProvider({ children }) {
     }
   }
   async function logout() {
+    if (isDemo) {
+      setUser(null);
+      setModal(null);
+      return;
+    }
     try {
       const r = await fetch("/api/auth", { method: "DELETE" });
       if (!r.ok) throw Error();
@@ -165,7 +191,29 @@ export default function AppProvider({ children }) {
       setNotice("লগআউট হয়নি। আবার চেষ্টা করুন।");
     }
   }
-  const openUpload = () => setModal(user || isDemo ? "upload" : "account");
+  useEffect(() => {
+    if (isDemo && demoReady)
+      try {
+        localStorage.setItem("kirtan-demo-songs-v2", JSON.stringify(songs));
+      } catch {}
+  }, [songs, demoReady]);
+  const canManage = (song) => canManageSong(user, song);
+  const openUpload = () => {
+    setEditSong(null);
+    setModal(user || isDemo ? "upload" : "account");
+  };
+  const openEdit = (song) => {
+    if (canManage(song)) {
+      setEditSong(song);
+      setModal("upload");
+    }
+  };
+  const requestDelete = (song) => {
+    if (canManage(song)) {
+      setSelectedSong(song);
+      setModal("deleteSong");
+    }
+  };
   const value = {
     songs,
     setSongs,
@@ -178,7 +226,7 @@ export default function AppProvider({ children }) {
     favorites,
     favoritesReady,
     favoritesError,
-    refreshFavorites: () => setFavoritesRetry(v => v + 1),
+    refreshFavorites: () => setFavoritesRetry((v) => v + 1),
     favoriteBusy,
     toggleFavorite,
     modal,
@@ -187,16 +235,25 @@ export default function AppProvider({ children }) {
     setNotice,
     logout,
     openUpload,
+    openEdit,
+    requestDelete,
+    canManage,
+    editSong,
+    setEditSong,
+    selectedSong,
+    setFavorites,
   };
   return (
     <Context.Provider value={value}>
       {children}
       <AccountDialog />
       <UploadDialog />
+      <DeleteSongDialog />
+      <ManageUsersDialog />
       {notice && (
         <div
           role="status"
-          className="fixed inset-x-3 bottom-25 z-50 mx-auto flex max-w-md items-center gap-3 rounded-2xl border border-amber-200 bg-[#fff8e8] p-4 text-sm text-[#63391d] shadow-xl sm:bottom-6"
+          className="fixed inset-x-3 bottom-25 z-50 mx-auto flex max-w-md items-center gap-3 rounded-2xl border border-amber-200 dark:border-stone-700 bg-[#fff8e8] dark:bg-stone-900 p-4 text-sm text-[#63391d] dark:text-stone-100 shadow-xl sm:bottom-6"
         >
           <span className="flex-1">{notice}</span>
           <button

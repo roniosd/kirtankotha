@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import useSiteTheme from "./useSiteTheme";
 export const readingSizes = [
   "text-[20px]",
   "text-[24px]",
@@ -9,22 +10,19 @@ export const readingSizes = [
 ];
 export default function useReadingSettings() {
   const [size, setSize] = useState(1),
-    [dark, setDark] = useState(false),
     [ready, setReady] = useState(false);
+  const theme = useSiteTheme();
   useEffect(() => {
     try {
       const saved = JSON.parse(
         localStorage.getItem("kirtan-reading-settings") || "null",
       );
-      if (saved) {
-        if (
-          Number.isInteger(saved.size) &&
-          saved.size >= 0 &&
-          saved.size < readingSizes.length
-        )
-          setSize(saved.size);
-        setDark(saved.dark === true);
-      }
+      if (
+        Number.isInteger(saved?.size) &&
+        saved.size >= 0 &&
+        saved.size < readingSizes.length
+      )
+        setSize(saved.size);
     } catch {}
     setReady(true);
   }, []);
@@ -33,9 +31,9 @@ export default function useReadingSettings() {
       try {
         localStorage.setItem(
           "kirtan-reading-settings",
-          JSON.stringify({ size, dark }),
+          JSON.stringify({ size }),
         );
       } catch {}
-  }, [size, dark, ready]);
-  return { size, setSize, dark, setDark, fontClass: readingSizes[size] };
+  }, [size, ready]);
+  return { size, setSize, ...theme, fontClass: readingSizes[size] };
 }

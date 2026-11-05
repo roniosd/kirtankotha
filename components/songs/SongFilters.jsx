@@ -11,8 +11,11 @@ export default function SongFilters({ params, update, searchRef }) {
   return (
     <>
       <div className="flex gap-2">
-        <label className="flex min-h-14 min-w-0 flex-1 items-center gap-3 rounded-2xl border border-[#dfc9aa] bg-white px-4 shadow-[0_2px_6px_#77421904]">
-          <Search className="shrink-0 text-[#a26b32]" size={23} />
+        <label className="flex min-h-14 min-w-0 flex-1 items-center gap-3 rounded-2xl border border-[#dfc9aa] dark:border-stone-700 bg-white dark:bg-stone-900 px-4 shadow-[0_2px_6px_#77421904]">
+          <Search
+            className="shrink-0 text-[#a26b32] dark:text-amber-100/80"
+            size={23}
+          />
           <input
             ref={searchRef}
             value={params.get("q") || ""}
@@ -21,7 +24,7 @@ export default function SongFilters({ params, update, searchRef }) {
             enterKeyHint="search"
             aria-label="গানের নাম বা কথা লিখুন"
             placeholder="গানের নাম বা কথা লিখুন…"
-            className="min-h-14 w-full min-w-0 bg-transparent text-base text-[#51341f] outline-none placeholder:text-[#a99a8a]"
+            className="min-h-14 w-full min-w-0 bg-transparent text-base text-[#51341f] dark:text-stone-100 outline-none placeholder:text-[#a99a8a]"
           />
           {params.get("q") && (
             <button
@@ -38,7 +41,7 @@ export default function SongFilters({ params, update, searchRef }) {
           type="button"
           onClick={() => setOpen(true)}
           aria-expanded={open}
-          className="flex min-h-14 shrink-0 items-center gap-2 rounded-2xl border border-[#e0c8a5] bg-[#fff8eb] px-3 font-medium text-[#89572c] sm:px-5"
+          className="flex min-h-14 shrink-0 items-center gap-2 rounded-2xl border border-[#e0c8a5] dark:border-stone-700 bg-[#fff8eb] dark:bg-stone-900 px-3 font-medium text-[#89572c] dark:text-amber-100/80 sm:px-5"
         >
           <SlidersHorizontal size={21} />
           <span>বিভাগ</span>
@@ -57,7 +60,7 @@ export default function SongFilters({ params, update, searchRef }) {
             type="button"
             aria-pressed={category === c}
             onClick={() => update({ category: c })}
-            className={`min-h-11 shrink-0 rounded-full border px-4 text-sm font-medium ${category === c ? "border-[#a44b24] bg-[#a44b24] text-white" : "border-[#e9dcc8] bg-white text-[#8c7052]"}`}
+            className={`min-h-11 shrink-0 rounded-full border px-4 text-sm font-medium ${category === c ? "border-[#a44b24] bg-[#a44b24] text-white" : "border-[#e9dcc8] dark:border-stone-700 bg-white dark:bg-stone-900 text-[#8c7052] dark:text-amber-100/80"}`}
           >
             {c || "সব বিভাগ"}
           </button>
@@ -84,7 +87,7 @@ export default function SongFilters({ params, update, searchRef }) {
                   key={t}
                   aria-pressed={type === t}
                   onClick={() => update({ type: t })}
-                  className={`min-h-12 rounded-xl border px-3 ${type === t ? "border-amber-700 bg-amber-100 text-amber-900" : "border-stone-200 bg-white"}`}
+                  className={`min-h-12 rounded-xl border px-3 ${type === t ? "border-amber-700 bg-amber-100 dark:bg-amber-950/40 text-amber-900 dark:text-amber-100" : "border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900"}`}
                 >
                   {t || "সব"}
                 </button>
@@ -99,7 +102,7 @@ export default function SongFilters({ params, update, searchRef }) {
                   key={c}
                   aria-pressed={category === c}
                   onClick={() => update({ category: c })}
-                  className={`flex min-h-12 items-center justify-between gap-2 rounded-xl border px-3 py-2 text-left text-base ${category === c ? "border-amber-700 bg-amber-100 text-amber-950" : "border-[#eadfcf] bg-white text-[#7f654b]"}`}
+                  className={`flex min-h-12 items-center justify-between gap-2 rounded-xl border px-3 py-2 text-left text-base ${category === c ? "border-amber-700 bg-amber-100 dark:bg-amber-950/40 text-amber-950 dark:text-amber-100" : "border-[#eadfcf] dark:border-stone-700 bg-white dark:bg-stone-900 text-[#7f654b] dark:text-amber-100/80"}`}
                 >
                   {c || "সব বিভাগ"}
                   {category === c && <Check size={17} className="shrink-0" />}
@@ -107,7 +110,7 @@ export default function SongFilters({ params, update, searchRef }) {
               ))}
             </div>
           </div>
-          <div className="sticky bottom-0 grid grid-cols-2 gap-3 bg-[#fffdf8] pt-2">
+          <div className="sticky bottom-0 grid grid-cols-2 gap-3 bg-[#fffdf8] dark:bg-stone-900 pt-2">
             <button
               className={secondaryClass}
               onClick={() => update({ category: "", type: "" })}

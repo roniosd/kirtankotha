@@ -31,7 +31,7 @@ export async function PUT(request) {
     if (
       favorite &&
       !demoSongs.some((song) => song._id === songId) &&
-      !(await Song.exists({ _id: songId }))
+      !(await Song.exists({ _id: songId, deletedAt: null }))
     )
       return json({ error: "গানটি পাওয়া যায়নি।" }, 404);
     const userRecord = await User.findByIdAndUpdate(

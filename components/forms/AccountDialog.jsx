@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useState } from "react";
 import { LogOut, UserRound, ArrowRight } from "lucide-react";
 import { useApp, isDemo } from "@/components/AppProvider";
@@ -48,9 +49,31 @@ export default function AccountDialog() {
     >
       {user ? (
         <div className="space-y-5">
-          <UserRound className="text-amber-800" size={32} />
+          <UserRound className="text-amber-800 dark:text-amber-100" size={32} />
           <p className="text-xl font-medium">{user.name || "স্বাগতম"}</p>
-          <p className="break-all text-stone-600">{user.email}</p>
+          <p className="break-all text-stone-600 dark:text-stone-400">
+            {user.email}
+          </p>
+          <Link
+            href="/?view=mine#songs"
+            onClick={close}
+            className={`${secondaryClass} w-full`}
+          >
+            আমার গান দেখুন
+          </Link>
+          {user.role === "admin" && (
+            <button
+              onClick={() => setModal("users")}
+              className={`${secondaryClass} w-full`}
+            >
+              সব ব্যবহারকারী পরিচালনা
+            </button>
+          )}
+          {isDemo && (
+            <p className="text-sm text-amber-900 dark:text-amber-100 dark:text-amber-200">
+              ডেমো: পরিবর্তন শুধু এই ব্রাউজারে থাকে।
+            </p>
+          )}
           <button onClick={logout} className={`${secondaryClass} w-full`}>
             <LogOut size={20} />
             লগআউট করুন
@@ -58,7 +81,7 @@ export default function AccountDialog() {
         </div>
       ) : (
         <>
-          <p className="mb-5 text-base leading-7 text-stone-600">
+          <p className="mb-5 text-base leading-7 text-stone-600 dark:text-stone-400">
             প্রিয় গান রাখতে ও নতুন গান যোগ করতে লগইন করুন।
           </p>
           <form onSubmit={submit} className="space-y-4">
@@ -66,7 +89,9 @@ export default function AccountDialog() {
               <label className="block space-y-2">
                 <span>
                   আপনার নাম{" "}
-                  <span className="text-sm text-stone-500">(না দিলেও হবে)</span>
+                  <span className="text-sm text-stone-500 dark:text-stone-400">
+                    (না দিলেও হবে)
+                  </span>
                 </span>
                 <input
                   name="name"
@@ -102,7 +127,10 @@ export default function AccountDialog() {
               />
             </label>
             {error && (
-              <p role="alert" className="rounded-xl bg-red-50 p-3 text-red-800">
+              <p
+                role="alert"
+                className="rounded-xl bg-red-50 dark:bg-red-950/40 p-3 text-red-800 dark:text-red-300"
+              >
                 {error}
               </p>
             )}
@@ -121,7 +149,7 @@ export default function AccountDialog() {
               setSignup(!signup);
               setError("");
             }}
-            className="mt-4 min-h-12 w-full rounded-xl text-center font-medium text-amber-900 underline underline-offset-4"
+            className="mt-4 min-h-12 w-full rounded-xl text-center font-medium text-amber-900 dark:text-amber-100 underline underline-offset-4"
           >
             {signup
               ? "অ্যাকাউন্ট আছে? লগইন করুন"

@@ -3,7 +3,7 @@ export default function NotFound() {
   return (
     <main className="mx-auto max-w-md px-5 py-20 text-center">
       <h1 className="text-3xl font-semibold">গানটি পাওয়া যায়নি</h1>
-      <p className="mt-4 leading-7 text-stone-500">
+      <p className="mt-4 leading-7 text-stone-500 dark:text-stone-400">
         ঠিকানাটি বদলে যেতে পারে। তালিকা থেকে আপনার গান খুঁজে নিন।
       </p>
       <Link

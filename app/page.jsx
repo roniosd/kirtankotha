@@ -4,7 +4,7 @@ export default function Page() {
   return (
     <Suspense
       fallback={
-        <p className="p-8 text-center text-amber-900">গানের খাতা খুলছে…</p>
+        <p className="p-8 text-center text-amber-900 dark:text-amber-100">গানের খাতা খুলছে…</p>
       }
     >
       <Home />

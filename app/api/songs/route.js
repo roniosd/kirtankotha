@@ -1,34 +1,25 @@
-import { richLyricsSchema, richTextToPlainText } from "@/lib/richLyrics";
-import { z } from "zod";
 import { ConnectDB } from "@/lib/DatabaseConnection";
 import { currentUser, sameOrigin, readBody } from "@/lib/auth";
 import Song from "@/models/Song";
-import { categories, demoSongs } from "@/lib/songs";
+import { songSchema } from "@/lib/songSchema";
 export const runtime = "nodejs";
-const schema = z.object({
-  title: z.string().trim().min(2).max(120),
-  category: z.enum(categories),
-  type: z.enum(["কীর্তন", "গান"]),
-  lyrics: z.string().trim().min(10).max(20000),
-  lyricsContent: richLyricsSchema.optional(),
-});
 export async function GET() {
   try {
     await ConnectDB();
-    const songs = await Song.find()
+    const songs = await Song.find({ deletedAt: null })
       .sort({ createdAt: -1 })
-      .select("title category type lyrics lyricsContent author")
+      .select(
+        "title category type lyrics lyricsContent author userId createdAt updatedAt",
+      )
       .lean();
     return Response.json(
-      { songs: [...songs, ...demoSongs] },
+      { songs },
       { headers: { "Cache-Control": "no-store" } },
     );
-  } catch {
+  } catch (error) {
+    console.error("Song list failed:", error.name, error.message);
     return Response.json(
-      {
-        error: "ডাটাবেস সংযুক্ত হয়নি। নমুনা গান দেখানো হচ্ছে।",
-        songs: demoSongs,
-      },
+      { error: "গান লোড করা যায়নি। আবার চেষ্টা করুন।", songs: [] },
       { status: 503 },
     );
   }
@@ -40,38 +31,24 @@ export async function POST(request) {
     const user = await currentUser();
     if (!user)
       return Response.json({ error: "প্রথমে লগইন করুন।" }, { status: 401 });
-    const parsed = schema.safeParse(await readBody(request));
+    const parsed = songSchema.safeParse(await readBody(request));
     if (!parsed.success)
       return Response.json(
-        { error: "শিরোনাম, ক্যাটাগরি ও গানের কথা সঠিকভাবে পূরণ করুন।" },
-        { status: 400 },
-      );
-    const data = {
-      ...parsed.data,
-      lyrics: parsed.data.lyricsContent
-        ? richTextToPlainText(parsed.data.lyricsContent).trim()
-        : parsed.data.lyrics,
-    };
-    if (data.lyrics.length < 10 || data.lyrics.length > 20000)
-      return Response.json(
-        { error: "গানের কথা ১০ থেকে ২০,০০০ অক্ষরের মধ্যে লিখুন।" },
+        { error: "নাম, বিভাগ ও গানের কথা সঠিকভাবে দিন।" },
         { status: 400 },
       );
     const song = await Song.create({
-      ...data,
+      ...parsed.data,
       userId: user._id,
       author: user.name || "কমিউনিটি",
     });
+    return Response.json({ song }, { status: 201 });
+  } catch (error) {
     return Response.json(
-      { song: { _id: song._id, ...data, author: song.author } },
-      { status: 201 },
-    );
-  } catch (e) {
-    return Response.json(
-      { error: "গান জমা দেওয়া যায়নি। তথ্য ও সংযোগ পরীক্ষা করুন।" },
+      { error: "গান জমা দেওয়া যায়নি।" },
       {
         status:
-          e instanceof SyntaxError || e.message === "PAYLOAD_TOO_LARGE"
+          error instanceof SyntaxError || error.message === "PAYLOAD_TOO_LARGE"
             ? 400
             : 503,
       },

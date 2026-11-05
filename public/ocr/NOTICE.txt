@@ -1,0 +1,1 @@
+OCR powered by Tesseract.js and Tesseract.js-core (Apache-2.0). Bengali and English model files are distributed from @tesseract.js-data/ben and @tesseract.js-data/eng packages. Assets are served from this site; selected images are processed locally in the browser.

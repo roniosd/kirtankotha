@@ -1,4 +1,5 @@
 import "./globals.css";
+import SiteThemeProvider from "@/components/SiteThemeProvider";
 import AppProvider from "@/components/AppProvider";
 export const metadata = {
   metadataBase: new URL(
@@ -35,7 +36,7 @@ export const viewport = {
 };
 export default function Layout({ children }) {
   return (
-    <html lang="bn" className="scroll-smooth">
+    <html lang="bn" className="scroll-smooth" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
@@ -48,8 +49,10 @@ export default function Layout({ children }) {
           rel="stylesheet"
         />
       </head>
-      <body className="m-0 bg-[#fffdf8] font-['Hind_Siliguri',sans-serif] text-[#51331f] antialiased selection:bg-amber-200 selection:text-stone-900">
-        <AppProvider>{children}</AppProvider>
+      <body className="m-0 bg-[#fffdf8] dark:bg-stone-900 dark:bg-stone-950 dark:text-stone-100 font-['Hind_Siliguri',sans-serif] text-[#51331f] dark:text-stone-100 antialiased selection:bg-amber-200 selection:text-stone-900">
+        <SiteThemeProvider>
+          <AppProvider>{children}</AppProvider>
+        </SiteThemeProvider>
       </body>
     </html>
   );
