@@ -70,7 +70,7 @@ export default function AccountDialog() {
             </button>
           )}
           {isDemo && (
-            <p className="text-sm text-amber-900 dark:text-amber-100 dark:text-amber-200">
+            <p className="text-sm text-amber-900 dark:text-amber-100">
               ডেমো: পরিবর্তন শুধু এই ব্রাউজারে থাকে।
             </p>
           )}

@@ -12,7 +12,7 @@ export default function SongActions({ song, compact = false }) {
         type="button"
         onClick={() => openEdit(song)}
         aria-label={`${song.title} সম্পাদনা করুন`}
-        className={`${style} bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-100 dark:bg-stone-800 dark:text-amber-100`}
+        className={`${style} bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-100`}
       >
         <Pencil size={17} />
         {compact ? "বদলান" : "সম্পাদনা"}

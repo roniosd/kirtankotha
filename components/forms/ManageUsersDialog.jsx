@@ -81,7 +81,7 @@ export default function ManageUsersDialog() {
         <p>অ্যাডমিন অনুমতি প্রয়োজন।</p>
       ) : (
         <div className="space-y-4">
-          <p className="text-sm leading-6 text-stone-500 dark:text-stone-400 dark:text-stone-400">
+          <p className="text-sm leading-6 text-stone-500 dark:text-stone-400">
             শুধু অ্যাডমিন এই তালিকা দেখতে পারেন।
           </p>
           <label className="flex items-center gap-2">
