@@ -100,13 +100,13 @@ export default function ManageUsersDialog() {
           {error && (
             <p
               role="alert"
-              className="text-red-700 dark:text-red-300 dark:text-red-300"
+              className="text-red-700 dark:text-red-300"
             >
               {error}
             </p>
           )}
           {selected ? (
-            <div className="rounded-2xl border border-red-200 bg-red-50 dark:bg-red-950/40 p-4 dark:border-red-900 dark:bg-red-950/40">
+            <div className="rounded-2xl border border-red-200 bg-red-50 dark:bg-red-950/40 p-4 dark:border-red-900">
               <h3 className="font-semibold">
                 {selected.name || selected.email}—অ্যাকাউন্ট মুছবেন?
               </h3>
@@ -132,25 +132,25 @@ export default function ManageUsersDialog() {
               </div>
             </div>
           ) : null}
-          <p className="text-sm text-stone-500 dark:text-stone-400 dark:text-stone-400">
+          <p className="text-sm text-stone-500 dark:text-stone-400">
             {loading ? "লোড হচ্ছে…" : `${bn(total)} জন ব্যবহারকারী`}
           </p>
           <ul className="space-y-2">
             {users.map((target) => (
               <li
                 key={target._id}
-                className="flex items-center gap-3 rounded-2xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 p-3 dark:border-stone-700 dark:bg-stone-900"
+                className="flex items-center gap-3 rounded-2xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 p-3"
               >
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium">
                     {target.name || "নাম দেওয়া হয়নি"}
                   </p>
-                  <p className="break-all text-xs text-stone-500 dark:text-stone-400 dark:text-stone-400">
+                  <p className="break-all text-xs text-stone-500 dark:text-stone-400">
                     {target.email}
                   </p>
                 </div>
                 {target._id === user._id ? (
-                  <span className="text-xs text-amber-800 dark:text-amber-100 dark:text-amber-200">
+                  <span className="text-xs text-amber-800 dark:text-amber-100">
                     আপনি
                   </span>
                 ) : (
@@ -158,7 +158,7 @@ export default function ManageUsersDialog() {
                     disabled={busy}
                     onClick={() => setSelected(target)}
                     aria-label={`${target.email} অ্যাকাউন্ট মুছুন`}
-                    className="flex min-h-11 items-center gap-1 rounded-xl bg-red-50 dark:bg-red-950/40 px-3 text-sm text-red-700 dark:text-red-300 dark:bg-red-950/40 dark:text-red-300"
+                    className="flex min-h-11 items-center gap-1 rounded-xl bg-red-50 dark:bg-red-950/40 px-3 text-sm text-red-700 dark:text-red-300"
                   >
                     <Trash2 size={16} />
                     মুছুন

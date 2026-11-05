@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { songSchema } from "../lib/songSchema.js";
 const payload = {
+  rightsConfirmed: true,
   title: "নামের কীর্তন",
   category: "নামকীর্তন",
   type: "কীর্তন",

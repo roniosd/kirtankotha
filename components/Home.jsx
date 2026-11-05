@@ -16,7 +16,7 @@ import AppHeader from "@/components/layout/AppHeader";
 import BottomNav from "@/components/layout/BottomNav";
 import SongList from "@/components/songs/SongList";
 import SongFilters from "@/components/songs/SongFilters";
-import { useApp, isDemo } from "@/components/AppProvider";
+import { useApp } from "@/components/AppProvider";
 import { bn, filterSongs } from "@/lib/songFilters";
 import Button, { secondaryClass } from "@/components/ui/Button";
 export default function Home() {
@@ -55,11 +55,11 @@ export default function Home() {
   }, [params]);
   const displayError = (favoritesView && favoritesError) || loadError;
   const filtered = filterSongs(songs, params, favorites, user?._id),
-    needsLogin = (favoritesView || mineView) && !user && (!isDemo || mineView);
+    needsLogin = (favoritesView || mineView) && !user;
   return (
     <>
       <AppHeader />
-      <main className="mx-auto max-w-6xl px-4 pt-5 pb-30 sm:px-8 sm:pt-8 sm:pb-10">
+      <main className="mx-auto max-w-6xl px-4 pt-5 pb-[calc(6rem+env(safe-area-inset-bottom))] sm:px-8 sm:pt-8 sm:pb-10">
         {!favoritesView && !mineView && (
           <section
             aria-label="স্বাগতম"
@@ -101,7 +101,7 @@ export default function Home() {
             <div>
               <p className="mb-1 text-xs tracking-wide text-[#a47f53] dark:text-amber-100/80">
                 {favoritesView || mineView
-                  ? "আপনার নিজের গানের খাতা"
+                  ? "আপনার শেয়ার করা গানের খাতা"
                   : "ভক্তির কথামালা"}
               </p>
               <h1 className="flex items-center gap-2 text-2xl font-semibold text-[#52311c] dark:text-stone-100 sm:text-3xl">
@@ -164,7 +164,7 @@ export default function Home() {
           ) : loading ||
             (favoritesView &&
               !favoritesError &&
-              ((!favoritesReady && !isDemo) || authLoading)) ? (
+              (!favoritesReady || authLoading)) ? (
             <div role="status" className="space-y-3 py-5">
               <p className="text-sm text-[#987555] dark:text-amber-100/80">
                 গান লোড হচ্ছে…

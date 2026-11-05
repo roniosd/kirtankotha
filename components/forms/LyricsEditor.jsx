@@ -1,4 +1,5 @@
 "use client";
+import GoogleLensLink from "./GoogleLensLink";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { Bold, Italic, Heading2, Undo2, Redo2, Type } from "lucide-react";

@@ -1,7 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { Plus } from "lucide-react";
-import { useApp, isDemo } from "@/components/AppProvider";
+import { useApp } from "@/components/AppProvider";
 import { plainTextToRichDoc } from "@/lib/richLyrics";
 import { categories } from "@/lib/songs";
 import dynamic from "next/dynamic";
@@ -46,25 +47,6 @@ export default function UploadDialog() {
       setError("গানের কথা ১০ থেকে ২০,০০০ অক্ষরের মধ্যে লিখুন।");
       return;
     }
-    if (isDemo && editSong) {
-      const fields = Object.fromEntries(new FormData(e.currentTarget));
-      setSongs((s) =>
-        s.map((song) =>
-          song._id === editSong._id
-            ? { ...song, ...fields, ...editorValue }
-            : song,
-        ),
-      );
-      setNotice("ডেমো গান আপডেট হয়েছে—শুধু এই ব্রাউজারে।");
-      close();
-      return;
-    }
-    if (isDemo) {
-      setError(
-        "ডেমোতে গান জমা হয় না। MongoDB সংযুক্ত প্রজেক্টে এই ফর্ম কাজ করবে।",
-      );
-      return;
-    }
     setBusy(true);
     try {
       const data = Object.fromEntries(new FormData(e.currentTarget));
@@ -73,7 +55,7 @@ export default function UploadDialog() {
         {
           method: editSong ? "PATCH" : "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...data, ...editorValue }),
+          body: JSON.stringify({ ...data, ...editorValue, rightsConfirmed: true }),
         },
       );
       const d = await r.json();
@@ -102,7 +84,7 @@ export default function UploadDialog() {
       title={editSong ? "গান সম্পাদনা করুন" : "নতুন গান যোগ করুন"}
     >
       <p className="mb-5 leading-7 text-stone-600 dark:text-stone-400">
-        গানের নাম, বিভাগ ও সম্পূর্ণ কথা লিখুন।
+        নিজের লেখা বা অনুমতি নিয়ে সংগৃহীত গান শেয়ার করুন। জমাদাতা ও গীতিকার আলাদা পরিচয়।
       </p>
       <form
         key={editSong?._id || "new"}
@@ -121,6 +103,18 @@ export default function UploadDialog() {
             className={inputClass}
           />
         </label>
+        <label className="block space-y-2">
+          <span>আপনি কী শেয়ার করছেন?</span>
+          <select name="contributionType" defaultValue={editSong?.contributionType || "collected"} className={inputClass}>
+            <option value="collected">সংগৃহীত গান — অন্যের লেখা</option>
+            <option value="original">নিজের লেখা গান</option>
+          </select>
+        </label>
+        <label className="block space-y-2">
+          <span>গীতিকারের নাম <small className="text-stone-500">(ঐচ্ছিক)</small></span>
+          <input name="lyricist" maxLength={120} defaultValue={editSong?.lyricist || ""} placeholder="যিনি গানটি লিখেছেন; জানা না থাকলে খালি রাখুন" className={inputClass} />
+        </label>
+       
         <label className="block space-y-2">
           <span>কোন বিভাগ?</span>
           <select
@@ -173,6 +167,10 @@ export default function UploadDialog() {
             {error}
           </p>
         )}
+        <label className="flex items-start gap-3 rounded-2xl bg-amber-50 p-4 text-sm leading-7 dark:bg-amber-950/30">
+          <input type="checkbox" required className="mt-1.5 size-5 shrink-0 accent-amber-700" />
+          <span>আমার এই গান প্রকাশের অধিকার/অনুমতি আছে বা ব্যবহারটি আইনত অনুমোদিত। আমি <Link href="/terms" target="_blank" rel="noopener noreferrer" className="font-semibold underline">শেয়ার ও কপিরাইট নীতিমালা (নতুন ট্যাব)</Link> মেনে চলব।</span>
+        </label>
         <Button disabled={busy} className="w-full">
           <Plus size={20} />
           {busy

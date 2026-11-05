@@ -9,7 +9,7 @@ export async function GET() {
     const songs = await Song.find({ deletedAt: null })
       .sort({ createdAt: -1 })
       .select(
-        "title category type lyrics lyricsContent author userId createdAt updatedAt",
+        "title category type lyrics lyricsContent author lyricist collectedBy source contributionType userId createdAt updatedAt",
       )
       .lean();
     return Response.json(
@@ -40,7 +40,7 @@ export async function POST(request) {
     const song = await Song.create({
       ...parsed.data,
       userId: user._id,
-      author: user.name || "কমিউনিটি",
+      collectedBy: user.name || "কমিউনিটির সদস্য",
     });
     return Response.json({ song }, { status: 201 });
   } catch (error) {

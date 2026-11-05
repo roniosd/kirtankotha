@@ -7,48 +7,33 @@ import {
   useRef,
   useState,
 } from "react";
-import { demoSongs } from "@/lib/songs";
 import AccountDialog from "@/components/forms/AccountDialog";
 import UploadDialog from "@/components/forms/UploadDialog";
 import { canManageSong } from "@/lib/permissions";
 import DeleteSongDialog from "@/components/songs/DeleteSongDialog";
 import ManageUsersDialog from "@/components/forms/ManageUsersDialog";
 import { X } from "lucide-react";
-export const isDemo = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
-const initialDemoSongs = demoSongs.map((song, index) => ({
-  ...song,
-  userId: index % 2 === 0 ? "demo-user" : "demo-other",
-}));
 const Context = createContext(null);
 export const useApp = () => useContext(Context);
-const readLocal = (key, fallback) => {
-  try {
-    return JSON.parse(localStorage.getItem(key)) ?? fallback;
-  } catch {
-    return fallback;
-  }
-};
 export default function AppProvider({ children }) {
-  const [songs, setSongs] = useState(isDemo ? initialDemoSongs : []),
-    [loading, setLoading] = useState(!isDemo),
+  const [songs, setSongs] = useState([]),
+    [loading, setLoading] = useState(true),
     [loadError, setLoadError] = useState(""),
     [user, setUser] = useState(null),
-    [authLoading, setAuthLoading] = useState(!isDemo),
+    [authLoading, setAuthLoading] = useState(true),
     [favorites, setFavorites] = useState([]),
-    [favoritesReady, setFavoritesReady] = useState(isDemo),
+    [favoritesReady, setFavoritesReady] = useState(false),
     [favoriteBusy, setFavoriteBusy] = useState(false),
     [favoritesError, setFavoritesError] = useState(""),
     [favoritesRetry, setFavoritesRetry] = useState(0),
     [editSong, setEditSong] = useState(null),
     [selectedSong, setSelectedSong] = useState(null),
-    [demoReady, setDemoReady] = useState(false),
     [modal, setModal] = useState(null),
     [notice, setNotice] = useState("");
   const pending = useRef(false),
     userRef = useRef(user);
   userRef.current = user;
   const refreshSongs = useCallback(async () => {
-    if (isDemo) return;
     setLoading(true);
     setLoadError("");
     try {
@@ -63,24 +48,6 @@ export default function AppProvider({ children }) {
     }
   }, []);
   useEffect(() => {
-    if (isDemo) {
-      const savedSongs = readLocal("kirtan-demo-songs-v2", null);
-      if (Array.isArray(savedSongs))
-        setSongs(
-          savedSongs.filter(
-            (song) =>
-              typeof song._id === "string" &&
-              typeof song.title === "string" &&
-              typeof song.lyrics === "string",
-          ),
-        );
-      setDemoReady(true);
-      const saved = readLocal("kirtan-demo-favorites", []);
-      setFavorites(
-        Array.isArray(saved) ? saved.filter((x) => typeof x === "string") : [],
-      );
-      return;
-    }
     refreshSongs();
     let active = true;
     fetch("/api/auth", { cache: "no-store" })
@@ -100,7 +67,6 @@ export default function AppProvider({ children }) {
     };
   }, [refreshSongs]);
   useEffect(() => {
-    if (isDemo) return;
     let active = true;
     setFavorites([]);
     setFavoritesReady(false);
@@ -129,25 +95,12 @@ export default function AppProvider({ children }) {
     return () => clearTimeout(timer);
   }, [notice]);
   async function toggleFavorite(songId) {
-    if (!isDemo && !user) {
+    if (!user) {
       setModal("account");
       return;
     }
     if (pending.current || !favoritesReady) return;
     const favorite = !favorites.includes(songId);
-    if (isDemo) {
-      const next = favorite
-        ? [...favorites, songId]
-        : favorites.filter((id) => id !== songId);
-      setFavorites(next);
-      try {
-        localStorage.setItem("kirtan-demo-favorites", JSON.stringify(next));
-      } catch {}
-      setNotice(
-        favorite ? "প্রিয় গানে রাখা হয়েছে।" : "প্রিয় তালিকা থেকে সরানো হয়েছে।",
-      );
-      return;
-    }
     pending.current = true;
     setFavoriteBusy(true);
     const owner = user?._id;
@@ -175,11 +128,6 @@ export default function AppProvider({ children }) {
     }
   }
   async function logout() {
-    if (isDemo) {
-      setUser(null);
-      setModal(null);
-      return;
-    }
     try {
       const r = await fetch("/api/auth", { method: "DELETE" });
       if (!r.ok) throw Error();
@@ -191,16 +139,10 @@ export default function AppProvider({ children }) {
       setNotice("লগআউট হয়নি। আবার চেষ্টা করুন।");
     }
   }
-  useEffect(() => {
-    if (isDemo && demoReady)
-      try {
-        localStorage.setItem("kirtan-demo-songs-v2", JSON.stringify(songs));
-      } catch {}
-  }, [songs, demoReady]);
   const canManage = (song) => canManageSong(user, song);
   const openUpload = () => {
     setEditSong(null);
-    setModal(user || isDemo ? "upload" : "account");
+    setModal(user ? "upload" : "account");
   };
   const openEdit = (song) => {
     if (canManage(song)) {

@@ -50,7 +50,6 @@ npm run dev
 ```env
 MONGODB_URI=mongodb+srv://USERNAME:PASSWORD@YOUR_CLUSTER.mongodb.net/kirtankotha
 AUTH_SECRET=your-own-random-secret-at-least-32-characters
-NEXT_PUBLIC_DEMO_MODE=false
 NEXT_PUBLIC_SITE_URL=https://kirtankotha.vercel.app
 ```
 
@@ -82,13 +81,11 @@ node --test tests/songFilters.test.mjs
 | `GET/PUT /api/favorites` | বর্তমান ব্যবহারকারীর প্রিয় গান; PUT body `{songId, favorite}` |
 | `POST /api/songs` | শুধু লগইন করা ব্যবহারকারীর গান জমা |
 
-## ডেমো বনাম আসল প্রজেক্ট
+## আসল ডাটাবেসের তথ্য
 
-Published preview-তে ছয়টি public-domain নমুনা excerpt ও browser-local favorites ব্যবহার হয়। ডেমোতে account বা submission সংরক্ষিত হয় না। Download করা project-এ `NEXT_PUBLIC_DEMO_MODE=false` রাখলে আসল APIs/MongoDB ব্যবহার হয়। Full project-এ static `output: 'export'` সেট করবেন না; dynamic song routes ও API-এর জন্য Node.js hosting প্রয়োজন। নমুনা গানের পরিবর্তে নিজের সম্পূর্ণ অনুমোদিত lyrics দিন। এটি ছোট সংগ্রহের জন্য তৈরি; list endpoint বর্তমানে সম্পূর্ণ collection ফেরত দেয়।
 
 ## যাচাই ও সীমা
 
-Production build এবং Bengali search/filter/context-link tests চালানো হয়েছে। Browser-এ mobile-width list, category selection, আলাদা reading page, previous/next, font settings ও demo favorites পরীক্ষা করা হয়েছে। আসল MongoDB credentials দেওয়া হয়নি; live registration, submission ও account favorites deployment-এর পর নিজের database দিয়ে পরীক্ষা করুন। Public launch-এর আগে hosting-এ authentication/submission rate limits দিন। Email verification ও password reset এই সংস্করণে নেই।
 
 ## গান লেখার সহজ এডিটর
 
@@ -103,7 +100,6 @@ Formatted document `lyricsContent`-এ এবং search-এর plain text `lyric
 - সাধারণ ব্যবহারকারী নিজের গান সম্পাদনা/মুছতে পারেন। তালিকা ও single-song page-এ একই বাটন আছে। নিচের “আমার গান” মেনুতে নিজের গানগুলো দেখা যায়।
 - অ্যাডমিন সব গান পরিচালনা এবং অ্যাকাউন্ট → “সব ব্যবহারকারী পরিচালনা” থেকে user search/delete করতে পারেন। নিজের অ্যাডমিন account মুছতে পারবেন না।
 - Song/User delete হলো soft delete (`deletedAt`)। সরানো গান public API থেকে আর আসে না। বন্ধ user-এর session পরবর্তী API request-এ বাতিল হয় এবং login আর কাজ করে না। তাঁর প্রকাশিত গান থাকে; admin সেগুলো আলাদাভাবে পরিচালনা করতে পারেন। Restore করতে database owner সংশ্লিষ্ট document-এর `deletedAt` null করতে পারেন; restore UI এই সংস্করণে নেই।
-- Production-এ demo গান দেখানো হয় না। আগে শুধু `lib/songs.js`-এ রাখা নমুনা গান থাকলে সেগুলো database song হিসেবে গণ্য হবে না; নিজের আসল গান add form দিয়ে যোগ করুন।
 
 ### ডাটাবেসে role দিয়ে অ্যাডমিন নির্ধারণ
 
@@ -135,6 +131,15 @@ Footer-এ আপনার অনুমোদিত credit: “Developed by Roni
 
 পুরো source backup রেখে নতুন archive merge করুন। `app/api/`, `lib/auth.js`, `lib/permissions.js`, `lib/songSchema.js`, `models/`, `components/`, `hooks/`, `scripts/`, `app/layout.jsx`, `app/globals.css`, package files প্রয়োজন। নিজের `.env.local` রাখুন। `npm ci` চালিয়ে server restart ও Production redeploy করুন। শুধু UI ফাইল copy করলে server permission বা editor updates কাজ করবে না।
 
-Preview-তে নমুনা গান, Google Lens link ও theme দেখা যায়; অ্যাকাউন্ট/role বাছাই বা অ্যাডমিন login simulation নেই। বাস্তব login ও role-based কাজ করতে MongoDB-সহ project চালান। Live database পরীক্ষা deployment-এর পরে করুন।
 
-যাচাই: role-based permission, signup role injection, ownership ও input/filter আচরণের ১৪টি test চালানো হয়েছে। Live MongoDB credentials ছাড়া বাস্তব CRUD পরীক্ষা করা হয়নি।
+যাচাই: role-based permission, signup role injection, ownership ও input/filter আচরণের ১৮টি test চালানো হয়েছে। Live MongoDB credentials ছাড়া বাস্তব CRUD পরীক্ষা করা হয়নি।
+
+
+## গীতিকার, সংগ্রাহক ও মন্তব্য
+
+Upload form-এ গীতিকারের নাম (`lyricist`) ও উৎস ঐচ্ছিক। সংগৃহীত/নিজের লেখা বেছে নেওয়া যায়। জমাদাতার পরিচয় server থেকে `collectedBy`-তে রাখা হয়। পুরোনো `author` field-এ জমাদাতার নাম থাকায় সেটি গীতিকার হিসেবে ব্যবহার করা হয় না। পুরোনো গানের গীতিকার জানা থাকলে edit করে সঠিক তথ্য দিন।
+
+গানের বিস্তারিত প্রথমবার খুললে browser-এ একবার ব্যাখ্যা দেখাবে; “গীতিকার ও শেয়ার সম্পর্কে জানুন” দিয়ে আবার পড়া যায়। Browser storage মুছলে বার্তাটি আবার দেখাবে।
+
+`/terms` পেজে শেয়ার, মন্তব্য, স্বত্ব ও অপসারণের অনুরোধের নির্দেশনা আছে। `COPYRIGHT_CONTACT_EMAIL` আপনার নিয়মিত দেখা ইমেইল দিন (বর্তমান default: ronidev39@gmail.com)। নীতিমালা কোনো আইনগত দায়মুক্তি বা গানের অনুমতি তৈরি করে না।
+

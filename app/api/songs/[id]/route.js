@@ -14,7 +14,7 @@ export async function GET(request, { params }) {
     await ConnectDB();
     const song = await Song.findOne({ _id: id, deletedAt: null })
       .select(
-        "title category type lyrics lyricsContent author userId createdAt updatedAt",
+        "title category type lyrics lyricsContent author lyricist collectedBy source contributionType userId createdAt updatedAt",
       )
       .lean();
     return song ? json({ song }) : json({ error: "গানটি পাওয়া যায়নি।" }, 404);
@@ -32,7 +32,7 @@ async function authorize(request, params) {
   const song = await Song.findOne({ _id: id, deletedAt: null }).lean();
   if (!song) return { error: json({ error: "গানটি পাওয়া যায়নি।" }, 404) };
   if (!canManageSong(user, song))
-    return { error: json({ error: "শুধু নিজের গান পরিবর্তন করা যাবে।" }, 403) };
+    return { error: json({ error: "শুধু নিজের জমা দেওয়া গান পরিবর্তন করা যাবে।" }, 403) };
   return { user, song, id };
 }
 export async function PATCH(request, { params }) {

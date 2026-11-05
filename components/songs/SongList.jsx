@@ -20,7 +20,7 @@ export default function SongList({ songs, from }) {
           >
             <span
               aria-hidden="true"
-              className="grid size-11 font-mono shrink-0 place-items-center rounded-2xl bg-[#fbf0de] dark:bg-stone-900 text-base font-medium text-[#a6773f] dark:text-amber-100/80 sm:size-14 sm:text-xl"
+              className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[#fbf0de] dark:bg-stone-900 text-base font-medium text-[#a6773f] dark:text-amber-100/80 sm:size-14 sm:text-xl"
             >
               {bn(index + 1)}
             </span>
@@ -37,9 +37,9 @@ export default function SongList({ songs, from }) {
                 {song.title}
               </h3>
               <div
+                className="mt-1 hidden text-sm text-stone-500 dark:text-stone-400 sm:line-clamp-3"
                 dangerouslySetInnerHTML={{ __html: song.lyrics || "" }}
-                className="mt-1 hidden truncate text-sm text-stone-500 dark:text-stone-400 sm:block"
-              ></div>
+              />
             </div>
             <span className="flex shrink-0 items-center gap-1 text-[#aa7945] dark:text-amber-100/80">
               <span className="hidden text-sm sm:inline">পড়ুন</span>

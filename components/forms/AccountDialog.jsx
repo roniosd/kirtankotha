@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { LogOut, UserRound, ArrowRight } from "lucide-react";
-import { useApp, isDemo } from "@/components/AppProvider";
+import { useApp } from "@/components/AppProvider";
 import Modal from "@/components/ui/Modal";
 import Button, { inputClass, secondaryClass } from "@/components/ui/Button";
 export default function AccountDialog() {
@@ -17,10 +17,6 @@ export default function AccountDialog() {
   async function submit(e) {
     e.preventDefault();
     setError("");
-    if (isDemo) {
-      setError("এটি ডেমো। আসল অ্যাকাউন্ট খুলতে MongoDB-সহ সোর্স কোড চালান।");
-      return;
-    }
     setBusy(true);
     try {
       const data = Object.fromEntries(new FormData(e.currentTarget));
@@ -68,11 +64,6 @@ export default function AccountDialog() {
             >
               সব ব্যবহারকারী পরিচালনা
             </button>
-          )}
-          {isDemo && (
-            <p className="text-sm text-amber-900 dark:text-amber-100">
-              ডেমো: পরিবর্তন শুধু এই ব্রাউজারে থাকে।
-            </p>
           )}
           <button onClick={logout} className={`${secondaryClass} w-full`}>
             <LogOut size={20} />

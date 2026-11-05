@@ -3,8 +3,11 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Flower2, Share2, BookOpen, RefreshCw, ArrowLeft } from "lucide-react";
-import { useApp, isDemo } from "@/components/AppProvider";
+import { useApp } from "@/components/AppProvider";
 import AppHeader from "@/components/layout/AppHeader";
+import SongAttribution from "./SongAttribution";
+import SongComments from "./SongComments";
+import BottomNav from "@/components/layout/BottomNav";
 import LyricsContent from "./LyricsContent";
 import SongActions from "./SongActions";
 import AppFooter from "@/components/layout/AppFooter";
@@ -14,7 +17,7 @@ import SongNavigation from "./SongNavigation";
 import useReadingSettings from "@/hooks/useReadingSettings";
 import { filterSongs } from "@/lib/songFilters";
 import { secondaryClass } from "@/components/ui/Button";
-export default function SongReader({ id, initialSong = null }) {
+export default function গীতিকারSongReader({ id, initialSong = null }) {
   const params = useSearchParams(),
     from = params.get("from") || "",
     filter = new URLSearchParams(from),
@@ -25,11 +28,9 @@ export default function SongReader({ id, initialSong = null }) {
     [error, setError] = useState(""),
     [retry, setRetry] = useState(0);
   const inList = songs.find((s) => String(s._id) === id),
-    song = isDemo
-      ? inList
-      : inList || (String(fetched?._id) === id ? fetched : null);
+    song = inList || (String(fetched?._id) === id ? fetched : null);
   useEffect(() => {
-    if (inList || initialSong || isDemo) return;
+    if (inList || initialSong) return;
     const controller = new AbortController();
     setError("");
     fetch(`/api/songs/${encodeURIComponent(id)}`, {
@@ -73,7 +74,7 @@ export default function SongReader({ id, initialSong = null }) {
       {song ? (
         <>
           <ReadingControls {...settings} />
-          <main className="mx-auto max-w-3xl px-5 pt-7 pb-52 sm:px-10 sm:pt-10">
+          <main className="mx-auto max-w-3xl px-5 pt-7 pb-[calc(18rem+env(safe-area-inset-bottom))] sm:pb-52 sm:px-10 sm:pt-10">
             <div
               className={`mb-3 flex flex-wrap items-center gap-2 text-xs ${dark ? "text-amber-200/70" : "text-[#a57c48] dark:text-amber-100/80"}`}
             >
@@ -84,25 +85,7 @@ export default function SongReader({ id, initialSong = null }) {
               </span>
               <span>{song.type}</span>
             </div>
-            <h1 className="text-[28px] leading-[1.55] font-semibold break-words sm:text-4xl">
-              {song.title}
-            </h1>
-            <p
-              className={`mt-2 text-sm ${dark ? "text-amber-100/55" : "text-[#a58b6b] dark:text-amber-100/80"}`}
-            >
-              {song.author || "কমিউনিটি"}
-            </p>
-            <div className="mt-5 flex flex-wrap gap-2">
-              <FavoriteButton song={song} withLabel dark={dark} />
-              <SongActions song={song} />
-              <button
-                onClick={share}
-                className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border px-4 text-sm font-medium ${dark ? "border-white/20 bg-white/5 text-amber-100" : "border-[#e6d6bd] dark:border-stone-700 bg-white dark:bg-stone-900 text-[#936b3c] dark:text-amber-100/80"}`}
-              >
-                <Share2 size={19} />
-                পাঠান
-              </button>
-            </div>
+
             <div
               className={`my-7 flex items-center gap-3 ${dark ? "text-amber-300/40" : "text-[#c3985e]"}`}
               aria-hidden="true"
@@ -138,9 +121,29 @@ export default function SongReader({ id, initialSong = null }) {
               <BookOpen size={19} />
               আরও গান পড়ুন
             </Link>
+        
+            <SongAttribution song={song} />
+            <div className="mt-5 flex flex-wrap gap-2">
+              <a
+                href="#comments"
+                className="inline-flex min-h-12 items-center gap-2 rounded-2xl border border-sky-200 bg-sky-50 px-4 text-sm font-semibold text-sky-900 dark:border-sky-900 dark:bg-sky-950 dark:text-sky-100"
+              >
+                মন্তব্য / গীতিকারের তথ্য দিন
+              </a>
+              <FavoriteButton song={song} withLabel dark={dark} />
+              <SongActions song={song} />
+              <button
+                onClick={share}
+                className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border px-4 text-sm font-medium ${dark ? "border-white/20 bg-white/5 text-amber-100" : "border-[#e6d6bd] dark:border-stone-700 bg-white dark:bg-stone-900 text-[#936b3c] dark:text-amber-100/80"}`}
+              >
+                <Share2 size={19} />
+                পাঠান
+              </button>
+            </div>
+            <SongComments key={id} songId={id} />
             <AppFooter />
           </main>
-          <div className="fixed inset-x-0 bottom-0 z-30 shadow-[0_-8px_30px_#4a2b0b08]">
+          <div className="fixed inset-x-0 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-30 sm:bottom-0 shadow-[0_-8px_30px_#4a2b0b08]">
             <SongNavigation
               previous={previous}
               next={next}
@@ -154,7 +157,7 @@ export default function SongReader({ id, initialSong = null }) {
         </>
       ) : (
         <main className="mx-auto max-w-xl px-5 py-16 text-center">
-          {error || (isDemo && !inList) ? (
+          {error ? (
             <>
               <h1 className="mb-3 text-2xl font-semibold">
                 {error || "গানটি সরানো হয়েছে।"}
@@ -181,6 +184,7 @@ export default function SongReader({ id, initialSong = null }) {
           </Link>
         </main>
       )}
+      <BottomNav />
     </div>
   );
 }

@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
-import { useApp, isDemo } from "@/components/AppProvider";
+import { useApp } from "@/components/AppProvider";
 import Modal from "@/components/ui/Modal";
 import { secondaryClass } from "@/components/ui/Button";
 export default function DeleteSongDialog() {
@@ -29,13 +29,11 @@ export default function DeleteSongDialog() {
     setBusy(true);
     setError("");
     try {
-      if (!isDemo) {
         const r = await fetch(`/api/songs/${selectedSong._id}`, {
           method: "DELETE",
         });
         const d = await r.json();
         if (!r.ok) throw Error(d.error);
-      }
       setSongs((s) => s.filter((song) => song._id !== selectedSong._id));
       setFavorites((f) => f.filter((id) => id !== selectedSong._id));
       setNotice("গানটি সরানো হয়েছে।");

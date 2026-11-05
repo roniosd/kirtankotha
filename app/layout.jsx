@@ -49,7 +49,7 @@ export default function Layout({ children }) {
           rel="stylesheet"
         />
       </head>
-      <body className="m-0 bg-[#fffdf8] dark:bg-stone-950 font-['Hind_Siliguri',sans-serif] text-[#51331f] dark:text-stone-100 antialiased selection:bg-amber-200 selection:text-stone-900">
+      <body className="m-0 bg-[#fffdf8] dark:bg-stone-900 dark:bg-stone-950 dark:text-stone-100 font-['Hind_Siliguri',sans-serif] text-[#51331f] dark:text-stone-100 antialiased selection:bg-amber-200 selection:text-stone-900">
         <SiteThemeProvider>
           <AppProvider>{children}</AppProvider>
         </SiteThemeProvider>

@@ -1,6 +1,5 @@
 "use client";
 import { Minus, Plus, Moon, Sun } from "lucide-react";
-import { isDemo } from "@/components/AppProvider";
 import { bn } from "@/lib/songFilters";
 import { readingSizes } from "@/hooks/useReadingSettings";
 export default function ReadingControls({ size, setSize, dark, setDark }) {
@@ -10,7 +9,7 @@ export default function ReadingControls({ size, setSize, dark, setDark }) {
   return (
     <section
       aria-label="পড়ার সুবিধা"
-      className={`sticky z-20 border-b px-4 py-3 sm:px-8 ${isDemo ? "top-[98px] sm:top-[106px]" : "top-18 sm:top-20"} ${dark ? "border-white/10 bg-[#211b15]/98" : "border-[#eadcc6] dark:border-stone-700 bg-[#fffaf0]/98 dark:bg-stone-900"} backdrop-blur-xl`}
+      className={`sticky z-20 border-b px-4 py-3 sm:px-8 top-[var(--app-header-height,8rem)] ${dark ? "border-white/10 bg-[#211b15]/98" : "border-[#eadcc6] dark:border-stone-700 bg-[#fffaf0]/98 dark:bg-stone-900"} backdrop-blur-xl`}
     >
       <div className="mx-auto flex max-w-3xl items-center justify-between gap-3">
         <div>
@@ -48,14 +47,7 @@ export default function ReadingControls({ size, setSize, dark, setDark }) {
             </button>
           </div>
         </div>
-        <button
-          onClick={() => setDark((v) => !v)}
-          aria-pressed={dark}
-          className={`flex min-h-13 items-center gap-1.5 rounded-2xl border px-2 text-[13px] font-medium ${outline}`}
-        >
-          {dark ? <Sun size={20} /> : <Moon size={20} />}
-          <span>{dark ? "দিনের আলো" : "রাতের আলো"}</span>
-        </button>
+         
       </div>
     </section>
   );

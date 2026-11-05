@@ -1,6 +1,6 @@
 "use client";
 import { Heart } from "lucide-react";
-import { useApp, isDemo } from "@/components/AppProvider";
+import { useApp } from "@/components/AppProvider";
 export default function FavoriteButton({
   song,
   withLabel = false,
@@ -20,7 +20,7 @@ export default function FavoriteButton({
       type="button"
       onClick={() => toggleFavorite(String(song._id))}
       disabled={
-        authLoading || favoriteBusy || (!isDemo && !!user && !favoritesReady)
+        authLoading || favoriteBusy || (!!user && !favoritesReady)
       }
       aria-label={`${song.title} ${saved ? "প্রিয় তালিকা থেকে সরান" : "প্রিয় গানে রাখুন"}`}
       aria-pressed={saved}
