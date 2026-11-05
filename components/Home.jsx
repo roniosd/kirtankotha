@@ -1,591 +1,253 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import {
-  Music2,
-  Search,
-  Plus,
-  ArrowUpRight,
   BookOpen,
-  X,
-  LogOut,
-  Flame,
-  Flower2,
   Heart,
-  ChevronDown,
+  Flower2,
+  ArrowRight,
+  Plus,
+  RefreshCw,
+  Search,
+  LogIn,
 } from "lucide-react";
-import { categories, demoSongs } from "@/lib/songs";
-const demo = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+import AppHeader from "@/components/layout/AppHeader";
+import BottomNav from "@/components/layout/BottomNav";
+import SongList from "@/components/songs/SongList";
+import SongFilters from "@/components/songs/SongFilters";
+import { useApp, isDemo } from "@/components/AppProvider";
+import { bn, filterSongs } from "@/lib/songFilters";
+import Button, { secondaryClass } from "@/components/ui/Button";
 export default function Home() {
-  const [songs, setSongs] = useState(demoSongs),
-    [user, setUser] = useState(null),
-    [query, setQuery] = useState(""),
-    [category, setCategory] = useState("সব গান"),
-    [type, setType] = useState("সব"),
-    [modal, setModal] = useState(null),
-    [active, setActive] = useState(null),
-    [signup, setSignup] = useState(false),
-    [busy, setBusy] = useState(false),
-    [error, setError] = useState(""),
-    [notice, setNotice] = useState("");
-  const dialog = useRef(null);
-  const [favorites, setFavorites] = useState([]),
-    [onlyFavorites, setOnlyFavorites] = useState(false),
-    [favoriteBusy, setFavoriteBusy] = useState(false),
-    [favoritesReady, setFavoritesReady] = useState(demo);
-  useEffect(() => {
-    let cancelled = false;
-    if (demo) {
-      try {
-        const saved = JSON.parse(
-          localStorage.getItem("kirtan-demo-favorites") || "[]",
-        );
-        if (Array.isArray(saved))
-          setFavorites(saved.filter((id) => typeof id === "string"));
-      } catch {}
-      return;
+  const params = useSearchParams(),
+    searchRef = useRef(null);
+  const {
+    songs,
+    loading,
+    loadError,
+    refreshSongs,
+    user,
+    authLoading,
+    favorites,
+    favoritesReady,
+    favoritesError,
+    refreshFavorites,
+    setModal,
+    openUpload,
+  } = useApp();
+  const favoritesView = params.get("view") === "favorites";
+  function update(values) {
+    const next = new URLSearchParams(params.toString());
+    for (const [key, value] of Object.entries(values)) {
+      if (value) next.set(key, value);
+      else next.delete(key);
     }
-    setFavorites([]);
-    setFavoritesReady(false);
-    if (!user) return;
-    fetch("/api/favorites")
-      .then(async (r) => {
-        const d = await r.json();
-        if (!r.ok) throw Error(d.error);
-        if (!cancelled) {
-          setFavorites(d.favorites);
-          setFavoritesReady(true);
-        }
-      })
-      .catch((err) => {
-        if (!cancelled) setNotice(err.message || "প্রিয় গান লোড করা যায়নি।");
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [user]);
-  async function toggleFavorite(songId) {
-    if (!demo && !user) {
-      open("auth");
-      return;
-    }
-    if (favoriteBusy || (!demo && !favoritesReady)) return;
-    const favorite = !favorites.includes(songId);
-    if (demo) {
-      const next = favorite
-        ? [...favorites, songId]
-        : favorites.filter((id) => id !== songId);
-      setFavorites(next);
-      localStorage.setItem("kirtan-demo-favorites", JSON.stringify(next));
-      setNotice("ডেমো: প্রিয় গান শুধু এই ব্রাউজারে সংরক্ষিত হচ্ছে।");
-      return;
-    }
-    setFavoriteBusy(true);
-    try {
-      const r = await fetch("/api/favorites", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ songId, favorite }),
-      });
-      const d = await r.json();
-      if (!r.ok) throw Error(d.error);
-      setFavorites(d.favorites);
-    } catch (err) {
-      setNotice(err.message || "আবার চেষ্টা করুন।");
-    } finally {
-      setFavoriteBusy(false);
-    }
+    window.history.replaceState(
+      null,
+      "",
+      `/${next.size ? "?" + next.toString() : ""}#songs`,
+    );
   }
   useEffect(() => {
-    if (!demo) {
-      fetch("/api/songs")
-        .then((r) => r.json())
-        .then((d) => {
-          if (d.songs) setSongs(d.songs);
-          if (d.error) setNotice(d.error);
-        })
-        .catch(() => setNotice("সংযোগ পাওয়া যায়নি। নমুনা গান দেখানো হচ্ছে।"));
-      fetch("/api/auth")
-        .then((r) => r.json())
-        .then((d) => setUser(d.user || null))
-        .catch(() => {});
-    }
-  }, []);
-  useEffect(() => {
-    if (modal) {
-      dialog.current?.showModal();
-      document.body.style.overflow = "hidden";
-    } else {
-      dialog.current?.close();
-      document.body.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [modal]);
-  function open(value) {
-    setError("");
-    setModal(value);
-  }
-  async function submit(e) {
-    e.preventDefault();
-    setError("");
-    setBusy(true);
-    const data = Object.fromEntries(new FormData(e.currentTarget));
-    try {
-      if (demo) {
-        setError(
-          "এটি ডিজাইন প্রিভিউ। অ্যাকাউন্ট ও গান জমা দিতে ডাউনলোড করা প্রজেক্টে MongoDB সংযুক্ত করুন।",
-        );
-        return;
-      }
-      const r = await fetch(modal === "upload" ? "/api/songs" : "/api/auth", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...data, action: signup ? "signup" : "signin" }),
-      });
-      const d = await r.json();
-      if (!r.ok) throw Error(d.error || "আবার চেষ্টা করুন।");
-      if (modal === "upload") {
-        setSongs((s) => [d.song, ...s]);
-        setNotice("আপনার গানটি যোগ হয়েছে। ধন্যবাদ!");
-      } else setUser(d.user);
-      setModal(null);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setBusy(false);
-    }
-  }
-  async function logout() {
-    try {
-      const r = await fetch("/api/auth", { method: "DELETE" });
-      if (!r.ok) throw Error();
-      setUser(null);
-      setFavorites([]);
-      setOnlyFavorites(false);
-    } catch {
-      setNotice("লগআউট করা যায়নি। আবার চেষ্টা করুন।");
-    }
-  }
-  const filtered = songs.filter(
-    (s) =>
-      (!onlyFavorites || favorites.includes(s._id)) &&
-      (category === "সব গান" || s.category === category) &&
-      (type === "সব" || s.type === type) &&
-      `${s.title} ${s.lyrics} ${s.category}`
-        .toLocaleLowerCase()
-        .includes(query.toLocaleLowerCase().trim()),
-  );
+    if (params.get("focus") === "search") searchRef.current?.focus();
+  }, [params]);
+  const displayError = (favoritesView && favoritesError) || loadError;
+  const filtered = filterSongs(songs, params, favorites),
+    needsLogin = favoritesView && !isDemo && !user;
   return (
     <>
-      <div className="devotional-band">
-        <span>কীর্তন · ভজন · পদাবলী</span>
-        <span>ভক্তির সুরে, হৃদয়ের সংযোগ</span>
-      </div>
-      <header>
-        <a className="brand" href="/" aria-label="কীর্তনকথা হোম">
-          <span className="brand-icon" aria-hidden="true">
-            ওঁ
-          </span>
-          কীর্তন<span>কথা</span>
-        </a>
-        <nav>
-          <a href="#collection">গানের সংগ্রহ</a>
-          {user ? (
-            <button className="quiet" onClick={logout}>
-              <LogOut size={16} />
-              লগআউট
-            </button>
-          ) : (
-            <button className="quiet" onClick={() => open("auth")}>
-              লগইন / নিবন্ধন
-            </button>
-          )}
-          <button
-            className="primary"
-            onClick={() => open(user ? "upload" : "auth")}
+      <AppHeader />
+      <main className="mx-auto max-w-6xl px-4 pt-5 pb-30 sm:px-8 sm:pt-8 sm:pb-10">
+        {!favoritesView && (
+          <section
+            aria-label="স্বাগতম"
+            className="relative isolate mb-7 overflow-hidden rounded-3xl border border-[#ead8b8] bg-[#f8ead1] px-5 py-6 sm:mb-9 sm:px-10 sm:py-12"
           >
-            <Plus size={17} /> গান যোগ করুন
-          </button>
-        </nav>
-      </header>
-      <main>
-        <section className="hero">
-          <img
-            className="hero-image"
-            src="/images/devotional-temple.webp"
-            alt="পদ্মফুল, প্রদীপ ও ভোরের আলোয় বাংলার মন্দিরের চিত্র"
-          />
-          <div className="hero-shade" />
-          <div className="hero-copy">
-            <div className="eyebrow">
-              <Flower2 size={16} /> সনাতন ভক্তিগীতির উন্মুক্ত খাতা
-            </div>
-            <h1>
+            <img
+              src="/images/devotional-temple.webp"
+              alt="পদ্ম ও প্রদীপসহ বাংলার মন্দির"
+              className="absolute inset-0 -z-20 h-full w-full object-cover object-[75%_center] sm:object-right"
+            />
+            <div className="absolute inset-0 -z-10 bg-linear-to-r from-[#fff1d9] via-[#fff1d9]/95 to-[#fff1d9]/15 sm:via-[#fff1d9]/75" />
+            <p className="mb-3 flex items-center gap-2 text-xs font-medium tracking-wide text-[#a16e37]">
+              <Flower2 size={16} />
+              সনাতন ভক্তিগীতির উন্মুক্ত খাতা
+            </p>
+            <h1 className="max-w-lg text-[32px] leading-[1.35] font-semibold tracking-tight text-[#58321e] sm:text-5xl">
               ভক্তির সুরে,
               <br />
-              <em>শান্তি খুঁজে নিন।</em>
+              <span className="text-[#a64b24]">শান্তি খুঁজে নিন।</span>
             </h1>
-            <p>
-              কীর্তন, পদাবলী আর প্রার্থনার প্রতিটি শব্দে
-              <br />
-              মিশে থাকুক ভক্তি, ভালোবাসা ও হৃদয়ের নিবেদন।
+            <p className="mt-3 hidden max-w-65 text-sm leading-7 text-[#896949] sm:block sm:max-w-md sm:text-base">
+              প্রিয় গান খুঁজুন। নামের ওপর চাপ দিয়ে
+              <br className="sm:hidden" /> সহজে গানের কথা পড়ুন।
             </p>
-            <a className="primary explore" href="#collection">
-              গানের খাতা খুলুন <ArrowUpRight size={19} />
+            <a
+              href="#songs"
+              className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#a44b24] px-4 text-sm font-medium text-white sm:min-h-12 sm:px-5"
+            >
+              <BookOpen size={18} />
+              গান পড়ুন
+              <ArrowRight size={17} />
             </a>
-            <div className="hero-caption">
-              <span /> সুরে সুরে স্মরণ, কথায় কথায় ভক্তি
-            </div>
-          </div>
-          <div className="hero-foot">
-            <span>
-              <BookOpen size={16} /> পড়ুন নিজের ছন্দে
-            </span>
-            <span>
-              <Flame size={15} /> বাংলার ভক্তি, বাংলার গান
-            </span>
-          </div>
-        </section>
-        <div className="sacred-divider" aria-hidden="true">
-          <span />
-          <Flower2 size={21} />
-          <span />
-        </div>
-        <section className="collection" id="collection">
-          <div className="section-top">
+          </section>
+        )}
+        <section id="songs" className="scroll-mt-30">
+          <div className="mb-5 flex items-center justify-between gap-4">
             <div>
-              <span className="eyebrow">ভক্তির কথামালা</span>
-              <h2>
-                গানের সংগ্রহ<span>এক খাতায়, অনেক সুর</span>
-              </h2>
+              <p className="mb-1 text-xs tracking-wide text-[#a47f53]">
+                {favoritesView ? "আপনার নিজের গানের খাতা" : "ভক্তির কথামালা"}
+              </p>
+              <h1 className="flex items-center gap-2 text-2xl font-semibold text-[#52311c] sm:text-3xl">
+                {favoritesView ? (
+                  <>
+                    <Heart size={25} className="text-[#b05b37]" />
+                    প্রিয় গান
+                  </>
+                ) : (
+                  "গানের সংগ্রহ"
+                )}
+              </h1>
             </div>
-            <label className="search">
-              <Search size={20} />
-              <input
-                aria-label="গান খুঁজুন"
-                placeholder="গানের নাম বা কথা লিখে খুঁজুন…"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-              />
-              {query && (
-                <button aria-label="সার্চ মুছুন" onClick={() => setQuery("")}>
-                  <X size={16} />
-                </button>
-              )}
-            </label>
-          </div>
-          <div className="filters" aria-label="গানের ক্যাটাগরি">
-            {["সব গান", ...categories].map((c) => (
+            <div className="hidden gap-2 sm:flex">
               <button
-                className={category === c ? "selected" : ""}
-                key={c}
-                onClick={() => setCategory(c)}
+                onClick={() => update({ view: "" })}
+                aria-pressed={!favoritesView}
+                className={`${secondaryClass} ${!favoritesView ? "border-amber-700 bg-amber-50" : ""}`}
               >
-                {c}
-              </button>
-            ))}
-          </div>
-          <div className="results-bar">
-            <div className="library-tabs">
-              <button
-                className={!onlyFavorites ? "active" : ""}
-                aria-pressed={!onlyFavorites}
-                onClick={() => setOnlyFavorites(false)}
-              >
+                <BookOpen size={18} />
                 সব গান
               </button>
               <button
-                className={onlyFavorites ? "active" : ""}
-                aria-pressed={onlyFavorites}
-                onClick={() => {
-                  if (!demo && !user) {
-                    open("auth");
-                    return;
-                  }
-                  setOnlyFavorites(true);
-                }}
+                onClick={() => update({ view: "favorites" })}
+                aria-pressed={favoritesView}
+                className={`${secondaryClass} ${favoritesView ? "border-amber-700 bg-amber-50" : ""}`}
               >
-                <Heart size={14} /> প্রিয় গান (
-                {favorites.length.toLocaleString("bn-BD")})
+                <Heart size={18} />
+                প্রিয় গান
               </button>
             </div>
-            <span>
-              {filtered.length.toLocaleString("bn-BD")}টি গান পাওয়া গেছে
+            <span className="text-sm text-[#a1815b] sm:hidden">
+              চাপ দিন, পড়ুন
             </span>
-            <label>
-              ধরন{" "}
-              <select
-                aria-label="গানের ধরন"
-                value={type}
-                onChange={(e) => setType(e.target.value)}
-              >
-                {["সব", "কীর্তন", "গান"].map((t) => (
-                  <option key={t}>{t}</option>
-                ))}
-              </select>
-              <ChevronDown size={14} />
-            </label>
           </div>
-          {notice && (
-            <div role="status" className="notice">
-              {notice}
-              <button aria-label="বন্ধ করুন" onClick={() => setNotice("")}>
-                <X size={16} />
+          <SongFilters params={params} update={update} searchRef={searchRef} />
+          {needsLogin && !authLoading ? (
+            <div className="my-6 rounded-3xl border border-[#e8d4b5] bg-[#fff6e7] p-7 text-center">
+              <Heart size={34} className="mx-auto mb-3 text-[#b15d3b]" />
+              <h2 className="text-xl font-semibold">
+                প্রিয় গান রাখতে লগইন করুন
+              </h2>
+              <p className="mx-auto mt-2 max-w-sm leading-7 text-[#987555]">
+                যে গান ভালো লাগে, হৃদয় চিহ্নে চাপ দিন। পরে এখানে সব গান একসঙ্গে
+                পাবেন।
+              </p>
+              <Button onClick={() => setModal("account")} className="mt-5">
+                <LogIn size={19} />
+                লগইন করুন
+              </Button>
+            </div>
+          ) : loading ||
+            (favoritesView && !favoritesError && ((!favoritesReady && !isDemo) || authLoading)) ? (
+            <div role="status" className="space-y-3 py-5">
+              <p className="text-sm text-[#987555]">গান লোড হচ্ছে…</p>
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="h-26 animate-pulse rounded-2xl bg-[#efe6d7]"
+                />
+              ))}
+            </div>
+          ) : displayError ? (
+            <div
+              role="alert"
+              className="my-6 rounded-3xl border border-red-100 bg-red-50 p-6"
+            >
+              <p className="leading-7 text-red-900">{displayError}</p>
+              <button
+                onClick={favoritesView && favoritesError ? refreshFavorites : refreshSongs}
+                className={`${secondaryClass} mt-4`}
+              >
+                <RefreshCw size={18} />
+                আবার চেষ্টা করুন
               </button>
             </div>
-          )}
-          <div className="grid">
-            {filtered.map((s, i) => (
-              <article key={s._id} className="song">
-                <button
-                  className="song-open"
-                  onClick={() => {
-                    setActive(s);
-                    open("read");
-                  }}
-                  aria-label={`${s.title} পড়ুন`}
-                >
-                  <div className="card-top">
-                    <span
-                      className={
-                        "badge tone" + (categories.indexOf(s.category) % 3)
-                      }
-                    >
-                      {s.category}
-                    </span>
-                    <span className="index">
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-                  </div>
-                  <h3>{s.title}</h3>
-                  <p>{s.lyrics.split("\n").slice(0, 2).join("\n")}</p>
-                </button>
-                <div className="card-bottom">
-                  <span>
-                    <Music2 size={14} />
-                    {s.author || "কমিউনিটি"} · {s.type}
-                  </span>
+          ) : (
+            <>
+              <div className="flex items-center justify-between gap-3 py-4 text-sm text-[#9a7e5c]">
+                <p>
+                  {bn(filtered.length)}টি গান
+                  {params.get("q") ? " পাওয়া গেছে" : ""}
+                </p>
+                {(params.get("q") ||
+                  params.get("category") ||
+                  params.get("type")) && (
                   <button
-                    className={
-                      "favorite " + (favorites.includes(s._id) ? "saved" : "")
-                    }
-                    aria-label={`${s.title} ${favorites.includes(s._id) ? "প্রিয় তালিকা থেকে সরান" : "প্রিয় তালিকায় রাখুন"}`}
-                    aria-pressed={favorites.includes(s._id)}
-                    disabled={
-                      favoriteBusy || (!demo && !!user && !favoritesReady)
-                    }
-                    onClick={() => toggleFavorite(s._id)}
+                    onClick={() => update({ q: "", category: "", type: "" })}
+                    className="min-h-10 rounded-xl px-2 text-[#a44b24] underline underline-offset-4"
                   >
-                    <Heart
-                      size={18}
-                      fill={favorites.includes(s._id) ? "currentColor" : "none"}
-                    />
+                    সব দেখুন
+                  </button>
+                )}
+              </div>
+              {filtered.length ? (
+                <SongList songs={filtered} from={params.toString()} />
+              ) : (
+                <div className="rounded-3xl border border-dashed border-[#ddc5a0] bg-[#fff9ef] px-5 py-10 text-center">
+                  {favoritesView ? (
+                    <Heart size={34} className="mx-auto mb-4 text-[#bb8a55]" />
+                  ) : (
+                    <Search size={34} className="mx-auto mb-4 text-[#bb8a55]" />
+                  )}
+                  <h2 className="text-xl font-semibold text-[#694526]">
+                    {favoritesView
+                      ? "এখানে এখনও কোনো গান নেই"
+                      : "কোনো গান পাওয়া যায়নি"}
+                  </h2>
+                  <p className="mx-auto mt-2 max-w-sm text-base leading-7 text-[#9b7c5b]">
+                    {favoritesView
+                      ? "গানের পাশে হৃদয় চিহ্নে চাপ দিন। সেই গান এখানে পাবেন।"
+                      : "অন্য নাম দিয়ে খুঁজুন অথবা সব বিভাগ দেখুন।"}
+                  </p>
+                  <button
+                    onClick={() =>
+                      update({ q: "", category: "", type: "", view: "" })
+                    }
+                    className={`${secondaryClass} mt-5`}
+                  >
+                    <BookOpen size={18} />
+                    সব গান দেখুন
                   </button>
                 </div>
-              </article>
-            ))}
-          </div>
-          {!filtered.length && (
-            <div className="empty">
-              <Search />
-              <h3>কোনো গান পাওয়া যায়নি</h3>
-              <p>
-                {onlyFavorites
-                  ? "গানের পাশের হৃদয় চিহ্নে চাপ দিয়ে প্রিয় তালিকায় যোগ করুন।"
-                  : "অন্য শব্দ বা ক্যাটাগরি দিয়ে খুঁজে দেখুন।"}
-              </p>
-              <button
-                onClick={() => {
-                  setQuery("");
-                  setCategory("সব গান");
-                  setType("সব");
-                  setOnlyFavorites(false);
-                }}
-              >
-                সব গান দেখুন
-              </button>
-            </div>
+              )}
+            </>
           )}
-          <aside className="contribute">
-            <div className="contribute-icon">
-              <Flower2 />
+          <aside className="mt-7 flex flex-wrap items-center gap-4 rounded-3xl border border-[#ebd7b5] bg-[#fbefda] p-5 sm:p-6">
+            <span className="hidden size-12 items-center justify-center rounded-2xl border border-[#e6cda3] text-[#b27a39] sm:flex">
+              <Flower2 size={26} />
+            </span>
+            <div className="flex-1">
+              <h2 className="text-lg font-semibold text-[#684125]">
+                আপনার জানা গানটি যোগ করুন
+              </h2>
+              <p className="mt-1 text-sm leading-6 text-[#987958]">
+                সবার গানের খাতা আরও সমৃদ্ধ হোক।
+              </p>
             </div>
-            <div>
-              <h3>আপনার জানা গানটি এখানে নেই?</h3>
-              <p>একটি গান যোগ করুন, সমৃদ্ধ হোক আমাদের সবার গানের খাতা।</p>
-            </div>
-            <button onClick={() => open(user ? "upload" : "auth")}>
-              গান যোগ করুন <Plus size={17} />
+            <button
+              onClick={openUpload}
+              className={`${secondaryClass} w-full sm:w-auto`}
+            >
+              <Plus size={21} />
+              নতুন গান দিন
             </button>
           </aside>
         </section>
+        <footer className="mt-7 border-t border-[#eee2d0] pt-5 text-center text-xs leading-6 text-[#aa9276]">
+          ভক্তির গান বেঁচে থাকুক, প্রজন্ম থেকে প্রজন্মে।
+        </footer>
       </main>
-      <footer>
-        <a className="brand" href="/">
-          কীর্তন<span>কথা</span>
-        </a>
-        <span>ভক্তির গান বেঁচে থাকুক, প্রজন্ম থেকে প্রজন্মে।</span>
-        <small>
-          {demo
-            ? "ডিজাইন প্রিভিউ · নমুনা গানের সংগ্রহ"
-            : "সবার জন্য উন্মুক্ত গানের খাতা"}
-        </small>
-      </footer>
-      <dialog
-        ref={dialog}
-        onCancel={() => setModal(null)}
-        onClick={(e) => {
-          if (e.target === dialog.current) setModal(null);
-        }}
-      >
-        <button
-          className="close"
-          aria-label="বন্ধ করুন"
-          onClick={() => setModal(null)}
-        >
-          <X />
-        </button>
-        {modal === "read" && active ? (
-          <article className="reader">
-            <span className="badge">
-              {active.category} · {active.type}
-            </span>
-            <h2>{active.title}</h2>
-            <p className="muted">{active.author || "কমিউনিটি"}</p>
-            <div className="lyrics">{active.lyrics}</div>
-          </article>
-        ) : (
-          <>
-            <div className="modal-icon">
-              <Flower2 />
-            </div>
-            <h2>
-              {modal === "upload"
-                ? "গানের খাতায় যোগ করুন"
-                : signup
-                  ? "আপনাকে স্বাগতম"
-                  : "আবার দেখা হলো!"}
-            </h2>
-            <p className="muted">
-              {modal === "upload"
-                ? "আপনার জানা গানের কথা সবার সঙ্গে ভাগ করে নিন।"
-                : "গান যোগ করতে আপনার অ্যাকাউন্টে প্রবেশ করুন।"}
-            </p>
-            <form onSubmit={submit}>
-              {modal === "upload" ? (
-                <>
-                  <label>
-                    গানের শিরোনাম
-                    <input
-                      name="title"
-                      required
-                      minLength={2}
-                      maxLength={120}
-                      placeholder="গানের নাম লিখুন"
-                    />
-                  </label>
-                  <div className="form-row">
-                    <label>
-                      ক্যাটাগরি
-                      <select name="category">
-                        {categories.map((c) => (
-                          <option key={c}>{c}</option>
-                        ))}
-                      </select>
-                    </label>
-                    <label>
-                      ধরন
-                      <select name="type">
-                        <option>কীর্তন</option>
-                        <option>গান</option>
-                      </select>
-                    </label>
-                  </div>
-                  <label>
-                    গানের কথা
-                    <textarea
-                      name="lyrics"
-                      required
-                      minLength={10}
-                      maxLength={20000}
-                      rows={8}
-                      placeholder="এখানে সম্পূর্ণ গানের কথা লিখুন…"
-                    />
-                  </label>
-                </>
-              ) : (
-                <>
-                  {signup && (
-                    <label>
-                      আপনার নাম <small>(ঐচ্ছিক)</small>
-                      <input
-                        name="name"
-                        maxLength={60}
-                        autoComplete="name"
-                        placeholder="নাম লিখুন"
-                      />
-                    </label>
-                  )}
-                  <label>
-                    ইমেইল
-                    <input
-                      name="email"
-                      type="email"
-                      required
-                      maxLength={254}
-                      autoComplete="email"
-                      placeholder="you@example.com"
-                    />
-                  </label>
-                  <label>
-                    পাসওয়ার্ড
-                    <input
-                      name="password"
-                      type="password"
-                      required
-                      minLength={8}
-                      maxLength={72}
-                      autoComplete={
-                        signup ? "new-password" : "current-password"
-                      }
-                      placeholder="কমপক্ষে ৮ অক্ষর"
-                    />
-                  </label>
-                </>
-              )}
-              {error && (
-                <p className="error" role="alert">
-                  {error}
-                </p>
-              )}
-              <button className="primary submit" disabled={busy}>
-                {busy
-                  ? "অপেক্ষা করুন…"
-                  : modal === "upload"
-                    ? "গান জমা দিন"
-                    : signup
-                      ? "অ্যাকাউন্ট তৈরি করুন"
-                      : "লগইন করুন"}
-                <ArrowUpRight size={18} />
-              </button>
-            </form>
-            {modal === "auth" && (
-              <p className="switch">
-                {signup ? "ইতিমধ্যে অ্যাকাউন্ট আছে?" : "অ্যাকাউন্ট নেই?"}{" "}
-                <button
-                  onClick={() => {
-                    setSignup(!signup);
-                    setError("");
-                  }}
-                >
-                  {signup ? "লগইন করুন" : "নিবন্ধন করুন"}
-                </button>
-              </p>
-            )}
-          </>
-        )}
-      </dialog>
+      <BottomNav />
     </>
   );
 }
